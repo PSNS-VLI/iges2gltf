@@ -1,22 +1,18 @@
 # -*- coding: utf-8 -*-
 import sys, os
 __cad_path__ = 'D:\\Program Files\\FreeCAD 0.20\\bin'
-__env__ = os.environ.copy()
+sys.path.append(__cad_path__)
 
-__path__ = __env__ .get("PATH", "")
-__path__ = __cad_path__ + os.pathsep + __path__
-__env__ ["PATH"] = __path__
-
-os.environ.update(__env__)
-
-import subprocess
+import FreeCAD as App
+import Part
 from tkinter import filedialog
 
 def main():
     folder=filedialog.askdirectory()
+    # first we check for filenames that contain .stp, .step, .igs or .iges
     cadfiles = []
     for f in os.listdir(folder):
-        for ext in [".igs", ".iges"]:
+        for ext in [".stp", ".step", ".igs", ".iges"]:
             if f.lower().endswith(ext):
                 cadfiles.append((folder+os.sep+f,ext))
                 break
@@ -26,10 +22,12 @@ def main():
         sys.exit()
 
     for f, ext in cadfiles:
-        stl = change_extension(f, '.gltf')
-        print(f'正在处理{f}-->{stl}')
-        command = f'FreeCADCmd -h'
-        subprocess.call(command, shell=True)
+        s = Part.insert(f, 'model')
+        stl = change_extension(f, '.step')
+        objs = []
+        for obj in App.ActiveDocument.Objects:
+            objs.append(App.getDocument('model').getObject(obj.Name))
+        Part.export(objs, stl)
     print("finished")
 
 def change_extension(file_path, new_extension):
